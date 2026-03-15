@@ -21,17 +21,17 @@
         .welcome-box { background: rgba(10,10,10,0.85); padding: 50px 40px; border-radius: 30px; text-align: center; border: 3px solid var(--neon-cyan); box-shadow: 0 0 70px var(--neon-green); animation: float 6s ease-in-out infinite; }
         .neon-title { font-size: 3.8rem; text-shadow: 0 0 15px var(--neon-cyan), 0 0 40px var(--neon-green), 0 0 70px var(--neon-cyan); margin-bottom: 15px; animation: neon-pulse 2s infinite alternate; }
         .subtitle { font-size: 1.4rem; margin-bottom: 30px; opacity: 0.9; }
-        #nickname-input { width: 340px; padding: 18px; font-size: 1.5rem; background: rgba(0,0,0,0.75); border: 3px solid var(--neon-cyan); border-radius: 15px; color: white; text-align: center; margin-bottom: 25px; transition: all 0.3s; }
+        #nickname-input { width: 340px; padding: 18px; font-size: 1.5rem; background: rgba(0,0,0,0.75); border: 3px solid var(--neon-cyan); border-radius: 15px; color: white; text-align: center; margin-bottom: 15px; transition: all 0.3s; }
         #nickname-input:focus { box-shadow: 0 0 45px var(--neon-green); border-color: var(--neon-green); }
         .neon-btn { padding: 16px 40px; font-size: 1.35rem; background: transparent; border: 3px solid var(--neon-cyan); color: white; border-radius: 50px; cursor: pointer; margin: 10px; transition: all 0.4s; text-transform: uppercase; box-shadow: 0 0 25px var(--neon-cyan); animation: btn-glow 2s infinite alternate; }
         .neon-btn:hover { background: var(--neon-cyan); color: #000; box-shadow: 0 0 60px var(--neon-green), 0 0 90px var(--neon-cyan); transform: scale(1.1) translateY(-5px); }
         .neon-btn.secondary { border-color: #666; box-shadow: 0 0 20px #666; }
         .neon-btn.secondary:hover { border-color: #aaa; box-shadow: 0 0 40px #aaa; }
         .neon-btn.disabled { opacity: 0.5; cursor: not-allowed; }
-        .header { position: absolute; top: 30px; left: 50px; right: 50px; display: flex; align-items: center; justify-content: space-between; z-index: 10; }
+        .header { position: absolute; top: 20px; left: 50px; right: 50px; display: flex; align-items: center; justify-content: space-between; z-index: 10; gap: 15px; flex-wrap: wrap; }
         .greeting { font-size: 1.9rem; text-shadow: 0 0 20px var(--neon-green); }
-        .task-count { font-size: 1.7rem; font-weight: bold; text-shadow: 0 0 15px var(--neon-cyan); }
-        .header-btn { padding: 14px 35px; font-size: 1.25rem; }
+        .task-count { font-size: 1.7rem; font-weight: bold; text-shadow: 0 0 15px var(--neon-cyan); margin-top: -8px; }
+        .header-btn { padding: 12px 28px; font-size: 1.2rem; }
         .filters { position: absolute; top: 95px; left: 50px; right: 50px; display: flex; gap: 15px; justify-content: center; align-items: center; z-index: 9; flex-wrap: wrap; }
         .filters label { color: var(--neon-green); font-size: 1.1rem; margin-right: 8px; }
         .filters select, .filters input { padding: 10px 15px; background: rgba(0,0,0,0.7); border: 3px solid var(--neon-cyan); border-radius: 15px; color: white; font-size: 1.1rem; }
@@ -77,12 +77,10 @@
         #close-chat { position: absolute; top: 10px; right: 10px; background: transparent; border: none; color: white; font-size: 2.5rem; cursor: pointer; }
         #toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background: rgba(0,255,204,0.95); color: #000; padding: 16px 28px; border-radius: 20px; box-shadow: 0 0 50px var(--neon-green); z-index: 200; display: none; font-size: 1.2rem; text-align: center; max-width: 340px; animation: toast-pop 0.4s ease forwards; }
         
-        /* ОПЛАТА — ШИРЕ И С НОВЫМ ТЕКСТОМ */
         #payment-modal .modal-content { width: 480px !important; padding: 30px 25px !important; }
         #payment-modal input { padding: 14px !important; font-size: 1.1rem !important; margin: 8px 0 !important; }
         #payment-modal p { font-size: 1.05rem; margin: 12px 0; color: var(--neon-green); }
 
-        /* НОВЫЙ МОДАЛЬНЫЙ ДЛЯ "ЧТО ЗА ПРИЛОЖЕНИЕ?" */
         #info-modal .modal-content { width: 680px !important; max-height: 85vh; overflow-y: auto; }
 
         @keyframes neon-pulse { from { text-shadow: 0 0 15px var(--neon-cyan), 0 0 40px var(--neon-green); } to { text-shadow: 0 0 35px var(--neon-cyan), 0 0 80px var(--neon-green), 0 0 120px var(--neon-cyan); } }
@@ -119,6 +117,7 @@
             <p class="subtitle" id="welcome-subtitle">Не настоящее имя — только Псевдоним</p>
             <input type="text" id="nickname-input" placeholder="Твой псевдоним...">
             <button id="ready-btn" class="neon-btn">Готово</button>
+            <button id="change-pass-welcome" class="neon-btn secondary" style="margin-top:10px;">Сменить пароль</button>
             <button id="info-btn" class="neon-btn secondary" style="margin-top:15px;">Что за приложение?</button>
         </div>
     </div>
@@ -129,7 +128,6 @@
             <div class="greeting" id="greeting">Привет, Космонавт</div>
             <div>
                 <button id="change-nick-btn" class="neon-btn header-btn" style="font-size:1.1rem; padding:10px 20px;">Поменять псевдоним</button>
-                <button id="change-pass-btn" class="neon-btn header-btn" style="font-size:1.1rem; padding:10px 20px;">Сменить пароль</button>
                 <button id="my-tasks-btn" class="neon-btn header-btn" style="font-size:1.1rem; padding:10px 20px;">Мои задания</button>
                 <button id="support-btn" class="neon-btn header-btn" style="font-size:1.1rem; padding:10px 20px;">Поддержка</button>
             </div>
@@ -267,22 +265,11 @@
         window.addEventListener('resize',()=>{canvas.width=window.innerWidth;canvas.height=window.innerHeight;});
 
         // === ДАННЫЕ ===
-        let nickname = ''; 
-        let currentPassword = ''; 
-        let isAdmin = false; 
-        let currentLang = 'ru'; 
-        let currentPage = 1; 
-        const itemsPerPage = 9;
-        let pendingTasks = []; 
-        let approvedTasks = []; 
-        let rejectedTasks = []; 
-        let archivedTasks = [];
-        let paymentPendingTasks = []; 
-        let supportRequests = []; 
-        let notifications = [];
-        let currentChatTaskId = null; 
-        let myTakenTask = null;
-        let users = []; // [{nickname: string, password: string, isAdmin: boolean}]
+        let nickname = ''; let currentPassword = ''; let isAdmin = false; let currentLang = 'ru'; let currentPage = 1; const itemsPerPage = 9;
+        let pendingTasks = []; let approvedTasks = []; let rejectedTasks = []; let archivedTasks = [];
+        let paymentPendingTasks = []; let supportRequests = []; let notifications = [];
+        let currentChatTaskId = null; let myTakenTask = null;
+        let users = [];
         const schoolsData = {"Обухів":["Академічний ліцей №1 ім. А.С. Малишка","Академічний ліцей №2","Академічний ліцей ім. Володимира Мельника","Ліцей №3 Обухівської міської ради","Ліцей №4","Академічний ліцей №5"],"Вишневе":["Вишнівський академічний ліцей №1","Вишнівський академічний ліцей №2","Вишнівський ліцей «ІДЕАЛ»","Вишнівський ліцей «Основа»","Ліцей «Афіна»","Вишнівський ліцей «Віват»"]};
 
         // Элементы
@@ -290,6 +277,7 @@
         const mainScreen = document.getElementById('main-screen');
         const nicknameInput = document.getElementById('nickname-input');
         const readyBtn = document.getElementById('ready-btn');
+        const changePassWelcome = document.getElementById('change-pass-welcome');
         const infoBtn = document.getElementById('info-btn');
         const greeting = document.getElementById('greeting');
         const totalTasksEl = document.getElementById('total-tasks');
@@ -304,7 +292,6 @@
         const modalTitle = document.getElementById('modal-title');
         const adminBtn = document.getElementById('admin-btn');
         const changeNickBtn = document.getElementById('change-nick-btn');
-        const changePassBtn = document.getElementById('change-pass-btn');
         const myTasksBtn = document.getElementById('my-tasks-btn');
         const supportBtn = document.getElementById('support-btn');
         const chatBtn = document.getElementById('chat-btn');
@@ -341,8 +328,7 @@
         }
 
         function loadFromLocal() {
-            const savedNick = localStorage.getItem('cosmoNickname'); 
-            if (savedNick) nickname = savedNick;
+            const savedNick = localStorage.getItem('cosmoNickname'); if (savedNick) nickname = savedNick;
             isAdmin = localStorage.getItem('isAdmin') === 'true';
             const p = localStorage.getItem('pendingTasks'); if (p) pendingTasks = JSON.parse(p);
             const a = localStorage.getItem('approvedTasks'); if (a) approvedTasks = JSON.parse(a);
@@ -351,8 +337,7 @@
             const pp = localStorage.getItem('paymentPendingTasks'); if (pp) paymentPendingTasks = JSON.parse(pp);
             const supp = localStorage.getItem('supportRequests'); if (supp) supportRequests = JSON.parse(supp);
             const not = localStorage.getItem('notifications'); if (not) notifications = JSON.parse(not);
-            const savedUsers = localStorage.getItem('users'); 
-            if (savedUsers) users = JSON.parse(savedUsers);
+            const savedUsers = localStorage.getItem('users'); if (savedUsers) users = JSON.parse(savedUsers);
             if (nickname) showMainScreen();
             checkMyTakenTask();
         }
@@ -700,7 +685,6 @@
             document.getElementById('welcome-subtitle').textContent = l === 'ru' ? 'Не настоящее имя — только Псевдоним' : 'Не справжнє ім\'я — тільки Псевдонім';
             readyBtn.textContent = l === 'ru' ? 'Готово' : 'Готово';
             changeNickBtn.textContent = l === 'ru' ? 'Поменять псевдоним' : 'Змінити псевдонім';
-            changePassBtn.textContent = l === 'ru' ? 'Сменить пароль' : 'Змінити пароль';
             myTasksBtn.textContent = l === 'ru' ? 'Мои задания' : 'Мої завдання';
             supportBtn.textContent = l === 'ru' ? 'Поддержка' : 'Підтримка';
             document.getElementById('task-count-text').textContent = l === 'ru' ? 'Всего заданий: ' : 'Всього завдань: ';
@@ -769,7 +753,6 @@
             infoModal.classList.remove('active');
         }
 
-        // === ЛОГИКА НИКОВ + ПАРОЛЕЙ ===
         function checkNicknameAndPassword(nick) {
             const existingUser = users.find(u => u.nickname.toLowerCase() === nick.toLowerCase());
             if (existingUser) {
@@ -820,54 +803,25 @@
         // Обработчики
         readyBtn.addEventListener('click', () => {
             let nick = nicknameInput.value.trim();
-            if (!nick) {
-                alert(currentLang === 'ru' ? 'Введите псевдоним!' : 'Введіть псевдонім!');
-                return;
-            }
-
-            // Специальные админы
+            let adminPass = '';
             if (nick === 'Пикс') {
-                const adminPass = prompt(currentLang === 'ru' ? 'Введите пароль для Пикс:' : 'Введіть пароль для Пікс:');
-                if (adminPass === 'KP7224') {
-                    nickname = nick;
-                    isAdmin = true;
-                    currentPassword = adminPass;
-                    if (!users.find(u => u.nickname === nick)) users.push({nickname: nick, password: adminPass, isAdmin: true});
-                    saveToLocal();
-                    showMainScreen();
-                    return;
-                } else {
-                    alert(currentLang === 'ru' ? 'Неверный пароль!' : 'Неправильний пароль!');
-                    return;
-                }
+                adminPass = prompt(currentLang === 'ru' ? 'Введите пароль для Пикс:' : 'Введіть пароль для Пікс:');
+                if (adminPass !== 'KP7224') { alert(currentLang === 'ru' ? 'Неверный пароль!' : 'Неправильний пароль!'); return; }
+                isAdmin = true;
+            } else if (nick === 'Куга') {
+                adminPass = prompt(currentLang === 'ru' ? 'Введите пароль для Куга:' : 'Введіть пароль для Куга:');
+                if (adminPass !== 'KKK7224f') { alert(currentLang === 'ru' ? 'Неверный пароль!' : 'Неправильний пароль!'); return; }
+                isAdmin = true;
             }
-            if (nick === 'Куга') {
-                const adminPass = prompt(currentLang === 'ru' ? 'Введите пароль для Куга:' : 'Введіть пароль для Куга:');
-                if (adminPass === 'KKK7224f') {
-                    nickname = nick;
-                    isAdmin = true;
-                    currentPassword = adminPass;
-                    if (!users.find(u => u.nickname === nick)) users.push({nickname: nick, password: adminPass, isAdmin: true});
-                    saveToLocal();
-                    showMainScreen();
-                    return;
-                } else {
-                    alert(currentLang === 'ru' ? 'Неверный пароль!' : 'Неправильний пароль!');
-                    return;
-                }
-            }
-
-            // Обычный ник + пароль
-            if (checkNicknameAndPassword(nick)) {
-                saveToLocal();
-                showMainScreen();
-            }
+            if (!checkNicknameAndPassword(nick)) return;
+            saveToLocal();
+            showMainScreen();
         });
+
+        changePassWelcome.addEventListener('click', changePassword);
 
         infoBtn.addEventListener('click', openInfoModal);
         closeInfoBtn.addEventListener('click', closeInfoModal);
-
-        changePassBtn.addEventListener('click', changePassword);
 
         createBtn.addEventListener('click', () => {
             modal.classList.add('active');
