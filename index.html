@@ -1,0 +1,1158 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Заданий по школе</title>
+    <style>
+        :root { 
+            --bg: #050505; 
+            --neon-cyan: #00ffcc; 
+            --neon-green: #00ff88; 
+            --white: #f0f0ff; 
+            --gray: #444; 
+            --yellow: #ffcc00; 
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Arial', sans-serif; background: var(--bg); color: var(--white); overflow: hidden; height: 100vh; position: relative; }
+        canvas#stars { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; opacity: 0.85; }
+        .screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; display: none; align-items: center; justify-content: center; z-index: 1; transition: opacity 1s ease; }
+        .screen.active { display: flex; opacity: 1; }
+        .welcome-box { background: rgba(10,10,10,0.85); padding: 50px 40px; border-radius: 30px; text-align: center; border: 3px solid var(--neon-cyan); box-shadow: 0 0 70px var(--neon-green); animation: float 6s ease-in-out infinite; }
+        .neon-title { font-size: 3.8rem; text-shadow: 0 0 15px var(--neon-cyan), 0 0 40px var(--neon-green), 0 0 70px var(--neon-cyan); margin-bottom: 15px; animation: neon-pulse 2s infinite alternate; }
+        .subtitle { font-size: 1.4rem; margin-bottom: 30px; opacity: 0.9; }
+        #nickname-input { width: 340px; padding: 18px; font-size: 1.5rem; background: rgba(0,0,0,0.75); border: 3px solid var(--neon-cyan); border-radius: 15px; color: white; text-align: center; margin-bottom: 25px; transition: all 0.3s; }
+        #nickname-input:focus { box-shadow: 0 0 45px var(--neon-green); border-color: var(--neon-green); }
+        .neon-btn { padding: 16px 40px; font-size: 1.35rem; background: transparent; border: 3px solid var(--neon-cyan); color: white; border-radius: 50px; cursor: pointer; margin: 10px; transition: all 0.4s; text-transform: uppercase; box-shadow: 0 0 25px var(--neon-cyan); animation: btn-glow 2s infinite alternate; }
+        .neon-btn:hover { background: var(--neon-cyan); color: #000; box-shadow: 0 0 60px var(--neon-green), 0 0 90px var(--neon-cyan); transform: scale(1.1) translateY(-5px); }
+        .neon-btn.secondary { border-color: #666; box-shadow: 0 0 20px #666; }
+        .neon-btn.secondary:hover { border-color: #aaa; box-shadow: 0 0 40px #aaa; }
+        .neon-btn.disabled { opacity: 0.5; cursor: not-allowed; }
+        .header { position: absolute; top: 30px; left: 50px; right: 50px; display: flex; align-items: center; justify-content: space-between; z-index: 10; }
+        .greeting { font-size: 1.9rem; text-shadow: 0 0 20px var(--neon-green); }
+        .task-count { font-size: 1.7rem; font-weight: bold; text-shadow: 0 0 15px var(--neon-cyan); }
+        .header-btn { padding: 14px 35px; font-size: 1.25rem; }
+        .filters { position: absolute; top: 95px; left: 50px; right: 50px; display: flex; gap: 15px; justify-content: center; align-items: center; z-index: 9; flex-wrap: wrap; }
+        .filters label { color: var(--neon-green); font-size: 1.1rem; margin-right: 8px; }
+        .filters select, .filters input { padding: 10px 15px; background: rgba(0,0,0,0.7); border: 3px solid var(--neon-cyan); border-radius: 15px; color: white; font-size: 1.1rem; }
+        .tasks-menu { margin-top: 180px; width: 90%; max-width: 1150px; text-align: center; }
+        .neon-subtitle { font-size: 2.4rem; margin-bottom: 25px; text-shadow: 0 0 35px var(--neon-green); }
+        .tasks-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+        .task-card { background: rgba(15,15,15,0.85); border: 3px solid var(--neon-cyan); border-radius: 20px; padding: 18px; text-align: left; transition: all 0.5s ease; box-shadow: 0 0 30px rgba(0,255,204,0.4); animation: card-float 4s ease-in-out infinite; font-size: 0.95rem; position: relative; }
+        .task-card.taken { background: rgba(50,50,50,0.65); border-color: var(--gray); animation: none; opacity: 0.7; }
+        .task-card.my-taken { background: rgba(255,204,0,0.65); border-color: var(--yellow); opacity: 1; }
+        .task-card:hover { transform: translateY(-15px) scale(1.05); box-shadow: 0 0 70px var(--neon-green); border-color: var(--neon-green); }
+        .task-card h4 { font-size: 1.45rem; margin-bottom: 8px; color: var(--neon-green); }
+        .task-card p { margin-bottom: 6px; opacity: 0.9; line-height: 1.4; }
+        .timer { color: #ffcc00; font-weight: bold; font-size: 0.95rem; }
+        .delete-btn { position: absolute; top: 10px; right: 10px; background: #ff0000; color: white; border: none; width: 34px; height: 34px; border-radius: 50%; font-size: 24px; cursor: pointer; display: none; animation: cancel-pulse 1.8s infinite alternate; box-shadow: 0 0 30px #ff0000; }
+        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); display: none; align-items: center; justify-content: center; z-index: 100; }
+        .modal.active { display: flex; }
+        .modal-content { background: rgba(10,10,10,0.98); padding: 35px; border-radius: 25px; border: 3px solid var(--neon-green); width: 420px; box-shadow: 0 0 80px var(--neon-cyan); max-height: 85vh; overflow-y: auto; overflow-x: hidden; animation: modal-pop 0.6s ease; }
+        .modal-content input, .modal-content textarea, .modal-content select { width: 100%; padding: 18px; margin: 10px 0; font-size: 1.3rem; background: rgba(0,0,0,0.75); border: 3px solid var(--neon-cyan); border-radius: 15px; color: white; transition: all 0.3s; }
+        .modal-content input:focus, .modal-content textarea:focus, .modal-content select:focus { box-shadow: 0 0 45px var(--neon-green); border-color: var(--neon-green); }
+        .modal-content textarea { min-height: 120px; resize: vertical; }
+        .modal-content label { display: block; margin-top: 15px; font-size: 1.2rem; color: var(--neon-green); }
+        .reason-input { width: 100%; padding: 18px; margin: 10px 0; font-size: 1.3rem; background: rgba(0,0,0,0.75); border: 3px solid var(--neon-cyan); border-radius: 15px; color: white; transition: all 0.3s; }
+        .reason-input:focus { box-shadow: 0 0 45px var(--neon-green); border-color: var(--neon-green); }
+        #lang-switch { position: absolute; bottom: 30px; right: 30px; z-index: 20; display: flex; gap: 10px; }
+        #lang-switch button { padding: 8px 18px; font-size: 1rem; background: transparent; border: 2px solid var(--neon-cyan); color: white; border-radius: 30px; cursor: pointer; }
+        #admin-btn { position: absolute; bottom: 100px; right: 30px; z-index: 20; padding: 12px 30px; font-size: 1.2rem; background: transparent; border: 3px solid #ffcc00; color: #ffcc00; border-radius: 50px; cursor: pointer; display: none; }
+        #admin-btn:hover { background: #ffcc00; color: black; }
+        #no-tasks { font-size: 2rem; color: #ff6666; margin-top: 50px; text-shadow: 0 0 20px #ff0000; }
+        #pagination { margin-top: 30px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+        #pagination button { padding: 8px 16px; background: transparent; border: 2px solid var(--neon-cyan); color: white; border-radius: 30px; cursor: pointer; font-size: 1.1rem; }
+        #pagination button.active { background: var(--neon-cyan); color: #000; box-shadow: 0 0 30px var(--neon-green); }
+        #chat-btn { position: fixed; bottom: 20px; left: 20px; z-index: 50; padding: 15px 30px; font-size: 1.4rem; background: var(--neon-green); border: none; color: #000; border-radius: 50px; cursor: pointer; box-shadow: 0 0 40px var(--neon-cyan); animation: chat-bounce 1.5s infinite; display: none; }
+        #chat-modal .modal-content { width: 400px; }
+        #chat-modal .chat-messages { max-height: 250px; overflow-y: auto; margin-bottom: 20px; padding-right: 10px; }
+        #chat-modal .chat-messages::-webkit-scrollbar { width: 8px; }
+        #chat-modal .chat-messages::-webkit-scrollbar-track { background: rgba(0,0,0,0.5); border-radius: 10px; }
+        #chat-modal .chat-messages::-webkit-scrollbar-thumb { background: var(--neon-cyan); border-radius: 10px; box-shadow: 0 0 10px var(--neon-green); }
+        #chat-modal .message { padding: 10px; margin: 5px 0; border-radius: 10px; }
+        #chat-modal .message.sent { background: var(--neon-cyan); color: #000; align-self: flex-end; }
+        #chat-modal .message.received { background: var(--gray); }
+        #video-upload { margin: 10px 0; }
+        #active-users { color: #ffcc00; font-size: 1.2rem; margin-bottom: 10px; }
+        #close-chat { position: absolute; top: 10px; right: 10px; background: transparent; border: none; color: white; font-size: 2.5rem; cursor: pointer; }
+        #toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background: rgba(0,255,204,0.95); color: #000; padding: 16px 28px; border-radius: 20px; box-shadow: 0 0 50px var(--neon-green); z-index: 200; display: none; font-size: 1.2rem; text-align: center; max-width: 340px; animation: toast-pop 0.4s ease forwards; }
+        
+        /* ОПЛАТА — ШИРЕ И С НОВЫМ ТЕКСТОМ */
+        #payment-modal .modal-content { width: 480px !important; padding: 30px 25px !important; }
+        #payment-modal input { padding: 14px !important; font-size: 1.1rem !important; margin: 8px 0 !important; }
+        #payment-modal p { font-size: 1.05rem; margin: 12px 0; color: var(--neon-green); }
+
+        /* НОВЫЙ МОДАЛЬНЫЙ ДЛЯ "ЧТО ЗА ПРИЛОЖЕНИЕ?" */
+        #info-modal .modal-content { width: 680px !important; max-height: 85vh; overflow-y: auto; }
+
+        @keyframes neon-pulse { from { text-shadow: 0 0 15px var(--neon-cyan), 0 0 40px var(--neon-green); } to { text-shadow: 0 0 35px var(--neon-cyan), 0 0 80px var(--neon-green), 0 0 120px var(--neon-cyan); } }
+        @keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-35px); } }
+        @keyframes card-float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
+        @keyframes btn-glow { from { box-shadow: 0 0 25px var(--neon-cyan); } to { box-shadow: 0 0 50px var(--neon-green); } }
+        @keyframes modal-pop { from { transform: scale(0.6) rotate(-8deg); opacity: 0; } to { transform: scale(1) rotate(0); opacity: 1; } }
+        @keyframes chat-bounce { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        @keyframes cancel-pulse { from { box-shadow: 0 0 20px #ff0000; transform: scale(1); } to { box-shadow: 0 0 55px #ff6666; transform: scale(1.12); } }
+        @keyframes toast-pop { from { transform: translate(-50%,40px); opacity:0; } to { transform: translate(-50%,0); opacity:1; } }
+        .neon-title, .neon-subtitle { animation: neon-pulse 3s infinite alternate; }
+        .cancel-pay { background: #ff0000 !important; border: 3px solid #ff6666 !important; color: white; padding: 14px 28px; font-size: 1.15rem; animation: cancel-pulse 1.8s infinite alternate; box-shadow: 0 0 35px #ff0000; }
+        .cancel-pay:hover { transform: scale(1.2); box-shadow: 0 0 70px #ff0000; }
+        
+        @media (max-width: 768px) {
+            body { overflow: auto; height: auto; }
+            .header { flex-direction: column; left: 10px; right: 10px; top: 10px; }
+            .filters { top: 120px; flex-direction: column; left: 10px; right: 10px; }
+            .tasks-menu { margin-top: 220px; width: 95%; }
+            .tasks-grid { grid-template-columns: 1fr; }
+            .modal-content { width: 92% !important; padding: 20px !important; }
+            #payment-modal .modal-content { width: 92% !important; }
+            #info-modal .modal-content { width: 92% !important; }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="stars"></canvas>
+
+    <!-- Экран псевдонима -->
+    <div id="welcome-screen" class="screen active">
+        <div class="welcome-box">
+            <h1 class="neon-title" id="welcome-title">Введи псевдоним</h1>
+            <p class="subtitle" id="welcome-subtitle">Не настоящее имя — только Псевдоним</p>
+            <input type="text" id="nickname-input" placeholder="Твой псевдоним...">
+            <button id="ready-btn" class="neon-btn">Готово</button>
+            <button id="info-btn" class="neon-btn secondary" style="margin-top:15px;">Что за приложение?</button>
+        </div>
+    </div>
+
+    <!-- Главный экран -->
+    <div id="main-screen" class="screen">
+        <header class="header">
+            <div class="greeting" id="greeting">Привет, Космонавт</div>
+            <div>
+                <button id="change-nick-btn" class="neon-btn header-btn" style="font-size:1.1rem; padding:10px 20px;">Поменять псевдоним</button>
+                <button id="change-pass-btn" class="neon-btn header-btn" style="font-size:1.1rem; padding:10px 20px;">Сменить пароль</button>
+                <button id="my-tasks-btn" class="neon-btn header-btn" style="font-size:1.1rem; padding:10px 20px;">Мои задания</button>
+                <button id="support-btn" class="neon-btn header-btn" style="font-size:1.1rem; padding:10px 20px;">Поддержка</button>
+            </div>
+            <div class="task-count" id="task-count-text">Всего заданий: <span id="total-tasks">0</span></div>
+            <button id="create-task-btn" class="neon-btn header-btn">Сделать задание</button>
+        </header>
+
+        <!-- ФИЛЬТРЫ -->
+        <div class="filters">
+            <div><label id="filter-city-label">Город:</label><select id="filter-city" onchange="updateFilterSchools();applyFilters()"><option value="">Все города</option><option value="Обухів">Обухів</option><option value="Вишневе">Вишневе</option></select></div>
+            <div><label id="filter-school-label">Школа:</label><select id="filter-school" onchange="applyFilters()"><option value="">Все школы</option></select></div>
+            <div><label id="filter-from-label">Цена от:</label><input type="number" id="filter-from" placeholder="0" oninput="applyFilters()" style="width:90px;"></div>
+            <div><label id="filter-to-label">Цена до:</label><input type="number" id="filter-to" placeholder="∞" oninput="applyFilters()" style="width:90px;"></div>
+            <div><label id="sort-label">Сортировка:</label><select id="sort-order" onchange="applyFilters()"><option value="new">Новые сначала</option><option value="old">Старые сначала</option></select></div>
+        </div>
+
+        <div class="tasks-menu">
+            <h2 id="tasks-title" class="neon-subtitle">Задания</h2>
+            <div id="tasks-container" class="tasks-grid"></div>
+            <div id="no-tasks" style="display:none;">Нету заданий!</div>
+            <div id="pagination"></div>
+        </div>
+    </div>
+
+    <!-- Модальное окно создания -->
+    <div id="create-modal" class="modal">
+        <div class="modal-content">
+            <h3 id="modal-title" class="neon-title" style="font-size:2.2rem;">Новое задание</h3>
+            <input type="text" id="task-title" placeholder="Название задания">
+            <textarea id="task-desc" placeholder="Описание..."></textarea>
+            <label id="city-label">Город</label><select id="city-select" onchange="updateSchoolOptions()"><option value="Обухів">Обухів</option><option value="Вишневе">Вишневе</option></select>
+            <label id="school-label">Школа</label><select id="school-select"></select>
+            <label id="reward-label">Сколько получит исполнитель (грн)</label><input type="number" id="reward-input" placeholder="500" min="10">
+            <div style="display:flex; justify-content:center; gap:15px; margin-top:20px;">
+                <button id="cancel-create" class="neon-btn secondary">Отмена</button>
+                <button id="save-task" class="neon-btn">Сделать задания</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно модерации -->
+    <div id="moderation-modal" class="modal">
+        <div class="modal-content" style="width:620px;">
+            <h3 id="moderation-title" class="neon-title" style="font-size:2.2rem;">Задания на проверку</h3>
+            <div id="active-users">Активных пользователей: <span id="active-count">1</span></div>
+            <div id="pending-list"></div>
+            <button onclick="closeModeration()" class="neon-btn secondary" style="margin-top:20px;">Закрыть</button>
+        </div>
+    </div>
+
+    <!-- Модальное окно "Мои задания" -->
+    <div id="my-tasks-modal" class="modal">
+        <div class="modal-content" style="width:520px;">
+            <h3 id="my-tasks-title" class="neon-title" style="font-size:2.2rem;">Мои задания</h3>
+            <button id="archive-btn" class="neon-btn secondary" style="margin-bottom:20px;">Архив</button>
+            <div id="my-tasks-list"></div>
+            <div id="archive-list" style="display:none;"></div>
+            <button id="back-from-archive" class="neon-btn secondary" style="display:none; margin-top:20px;">Назад</button>
+            <button onclick="closeMyTasks()" class="neon-btn secondary" style="margin-top:20px;">Закрыть</button>
+        </div>
+    </div>
+
+    <!-- Модальное окно чата -->
+    <div id="chat-modal" class="modal">
+        <div class="modal-content">
+            <button id="close-chat">×</button>
+            <h3 class="neon-title">Чат по заданию <span id="chat-task-title"></span></h3>
+            <div class="chat-messages" id="chat-messages"></div>
+            <input type="text" id="chat-input" placeholder="Сообщение...">
+            <button id="send-msg" class="neon-btn">Отправить</button>
+            <input type="file" id="video-upload" accept="video/*">
+            <button id="upload-video" class="neon-btn secondary">Загрузить видео</button>
+            <button id="reject-proof" class="neon-btn secondary" style="display:none;">Неверно</button>
+            <button id="accept-proof" class="neon-btn" style="display:none; background:#00ff88; color:#000;">Принять и выплатить</button>
+        </div>
+    </div>
+
+    <!-- Модальное окно поддержки -->
+    <div id="support-modal" class="modal">
+        <div class="modal-content" style="width:580px; max-height:90vh;">
+            <button id="close-support" class="neon-btn secondary" style="position:absolute; top:15px; right:15px; font-size:2rem;">×</button>
+            <h3 id="support-title" class="neon-title" style="font-size:2.2rem; text-align:center;">Поддержка</h3>
+            <div id="support-content" style="padding:10px 0;"></div>
+        </div>
+    </div>
+
+    <!-- Модальное окно оплаты -->
+    <div id="payment-modal" class="modal">
+        <div class="modal-content">
+            <h3 class="neon-title" id="pay-title" style="font-size:1.9rem;">Предоплата</h3>
+            <p style="text-align:center;margin:10px 0;font-size:1.05rem;">Ждем оплату</p>
+            <input type="text" id="fake-card" placeholder="4242 4242 4242 4242" maxlength="19" style="margin:8px 0;">
+            <div style="display:flex;gap:10px;">
+                <input type="text" id="fake-expiry" placeholder="MM/YY" maxlength="5" style="flex:1;">
+                <input type="text" id="fake-cvv" placeholder="CVV" maxlength="3" style="flex:1;">
+            </div>
+            <div style="display:flex;gap:15px;margin-top:20px;">
+                <button id="cancel-pay" class="neon-btn secondary">Отмена</button>
+                <button id="confirm-pay" class="neon-btn">Оплатить</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно "Что за приложение?" -->
+    <div id="info-modal" class="modal">
+        <div class="modal-content">
+            <button id="close-info" class="neon-btn secondary" style="position:absolute; top:15px; right:15px; font-size:2rem;">×</button>
+            <h3 class="neon-title" style="font-size:2.2rem; text-align:center;">Что за приложение?</h3>
+            <div id="info-content" style="padding:20px; text-align:left; line-height:1.7; font-size:1.1rem;"></div>
+        </div>
+    </div>
+
+    <!-- Кнопка админа -->
+    <button id="admin-btn" onclick="openModeration()">Просмотр Заданий</button>
+
+    <!-- Кнопка чата -->
+    <button id="chat-btn">Чат</button>
+
+    <!-- Тост уведомление -->
+    <div id="toast"></div>
+
+    <!-- Язык -->
+    <div id="lang-switch">
+        <button onclick="setLang('ru')">Русский</button>
+        <button onclick="setLang('uk')">Українська</button>
+    </div>
+
+    <script>
+        // === КАНВАС ЗВЁЗД ===
+        const canvas = document.getElementById('stars'); const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+        let stars = []; class Star { constructor() { this.x = Math.random()*canvas.width; this.y = Math.random()*canvas.height; this.size = Math.random()*2.8+0.6; this.speed = Math.random()*0.018+0.006; } update() { this.size = Math.sin(Date.now()*this.speed*0.001)*1.8+2.2; } draw() { ctx.fillStyle='#ffffff'; ctx.shadowBlur=18; ctx.shadowColor='#00ffcc'; ctx.beginPath(); ctx.arc(this.x,this.y,this.size,0,Math.PI*2); ctx.fill(); } }
+        for(let i=0;i<320;i++) stars.push(new Star());
+        function animateStars(){ ctx.clearRect(0,0,canvas.width,canvas.height); stars.forEach(s=>{s.update();s.draw();}); requestAnimationFrame(animateStars); } animateStars();
+        window.addEventListener('resize',()=>{canvas.width=window.innerWidth;canvas.height=window.innerHeight;});
+
+        // === ДАННЫЕ ===
+        let nickname = ''; 
+        let currentPassword = ''; 
+        let isAdmin = false; 
+        let currentLang = 'ru'; 
+        let currentPage = 1; 
+        const itemsPerPage = 9;
+        let pendingTasks = []; 
+        let approvedTasks = []; 
+        let rejectedTasks = []; 
+        let archivedTasks = [];
+        let paymentPendingTasks = []; 
+        let supportRequests = []; 
+        let notifications = [];
+        let currentChatTaskId = null; 
+        let myTakenTask = null;
+        let users = []; // [{nickname: string, password: string, isAdmin: boolean}]
+        const schoolsData = {"Обухів":["Академічний ліцей №1 ім. А.С. Малишка","Академічний ліцей №2","Академічний ліцей ім. Володимира Мельника","Ліцей №3 Обухівської міської ради","Ліцей №4","Академічний ліцей №5"],"Вишневе":["Вишнівський академічний ліцей №1","Вишнівський академічний ліцей №2","Вишнівський ліцей «ІДЕАЛ»","Вишнівський ліцей «Основа»","Ліцей «Афіна»","Вишнівський ліцей «Віват»"]};
+
+        // Элементы
+        const welcomeScreen = document.getElementById('welcome-screen');
+        const mainScreen = document.getElementById('main-screen');
+        const nicknameInput = document.getElementById('nickname-input');
+        const readyBtn = document.getElementById('ready-btn');
+        const infoBtn = document.getElementById('info-btn');
+        const greeting = document.getElementById('greeting');
+        const totalTasksEl = document.getElementById('total-tasks');
+        const tasksContainer = document.getElementById('tasks-container');
+        const noTasksEl = document.getElementById('no-tasks');
+        const paginationEl = document.getElementById('pagination');
+        const createBtn = document.getElementById('create-task-btn');
+        const modal = document.getElementById('create-modal');
+        const cancelCreate = document.getElementById('cancel-create');
+        const saveTaskBtn = document.getElementById('save-task');
+        const tasksTitle = document.getElementById('tasks-title');
+        const modalTitle = document.getElementById('modal-title');
+        const adminBtn = document.getElementById('admin-btn');
+        const changeNickBtn = document.getElementById('change-nick-btn');
+        const changePassBtn = document.getElementById('change-pass-btn');
+        const myTasksBtn = document.getElementById('my-tasks-btn');
+        const supportBtn = document.getElementById('support-btn');
+        const chatBtn = document.getElementById('chat-btn');
+        const chatModal = document.getElementById('chat-modal');
+        const chatTaskTitle = document.getElementById('chat-task-title');
+        const chatMessages = document.getElementById('chat-messages');
+        const chatInput = document.getElementById('chat-input');
+        const sendMsg = document.getElementById('send-msg');
+        const videoUpload = document.getElementById('video-upload');
+        const uploadVideo = document.getElementById('upload-video');
+        const rejectProof = document.getElementById('reject-proof');
+        const acceptProof = document.getElementById('accept-proof');
+        const closeChatBtn = document.getElementById('close-chat');
+        const supportModal = document.getElementById('support-modal');
+        const closeSupportBtn = document.getElementById('close-support');
+        const paymentModal = document.getElementById('payment-modal');
+        const toast = document.getElementById('toast');
+        const backFromArchive = document.getElementById('back-from-archive');
+        const infoModal = document.getElementById('info-modal');
+        const closeInfoBtn = document.getElementById('close-info');
+        const infoContent = document.getElementById('info-content');
+
+        function saveToLocal() {
+            localStorage.setItem('cosmoNickname', nickname);
+            localStorage.setItem('isAdmin', isAdmin);
+            localStorage.setItem('pendingTasks', JSON.stringify(pendingTasks));
+            localStorage.setItem('approvedTasks', JSON.stringify(approvedTasks));
+            localStorage.setItem('rejectedTasks', JSON.stringify(rejectedTasks));
+            localStorage.setItem('archivedTasks', JSON.stringify(archivedTasks));
+            localStorage.setItem('paymentPendingTasks', JSON.stringify(paymentPendingTasks));
+            localStorage.setItem('supportRequests', JSON.stringify(supportRequests));
+            localStorage.setItem('notifications', JSON.stringify(notifications));
+            localStorage.setItem('users', JSON.stringify(users));
+        }
+
+        function loadFromLocal() {
+            const savedNick = localStorage.getItem('cosmoNickname'); 
+            if (savedNick) nickname = savedNick;
+            isAdmin = localStorage.getItem('isAdmin') === 'true';
+            const p = localStorage.getItem('pendingTasks'); if (p) pendingTasks = JSON.parse(p);
+            const a = localStorage.getItem('approvedTasks'); if (a) approvedTasks = JSON.parse(a);
+            const r = localStorage.getItem('rejectedTasks'); if (r) rejectedTasks = JSON.parse(r);
+            const arch = localStorage.getItem('archivedTasks'); if (arch) archivedTasks = JSON.parse(arch);
+            const pp = localStorage.getItem('paymentPendingTasks'); if (pp) paymentPendingTasks = JSON.parse(pp);
+            const supp = localStorage.getItem('supportRequests'); if (supp) supportRequests = JSON.parse(supp);
+            const not = localStorage.getItem('notifications'); if (not) notifications = JSON.parse(not);
+            const savedUsers = localStorage.getItem('users'); 
+            if (savedUsers) users = JSON.parse(savedUsers);
+            if (nickname) showMainScreen();
+            checkMyTakenTask();
+        }
+
+        function showToast(msg) {
+            toast.textContent = msg;
+            toast.style.display = 'block';
+            setTimeout(() => toast.style.display = 'none', 3500);
+        }
+
+        function addNotification(text) {
+            notifications.unshift({id: Date.now(), text, time: new Date().toLocaleTimeString('ru-RU')});
+            if (notifications.length > 30) notifications.pop();
+            saveToLocal();
+            showToast(text);
+        }
+
+        function showMainScreen() {
+            welcomeScreen.style.opacity = '0';
+            setTimeout(() => {
+                welcomeScreen.style.display = 'none';
+                mainScreen.classList.add('active');
+                updateGreeting();
+                adminBtn.style.display = isAdmin ? 'block' : 'none';
+                applyFilters();
+            }, 900);
+        }
+
+        function updateGreeting() {
+            greeting.textContent = currentLang === 'ru' ? `Привет, ${nickname}!` : `Привіт, ${nickname}!`;
+        }
+
+        function getRemainingTime(creationTime, takenBy) {
+            if (takenBy) return currentLang === 'ru' ? 'Заморожено' : 'Заморожено';
+            const remainingMs = creationTime + 48*3600000 - Date.now();
+            if (remainingMs <= 0) return 0;
+            const h = Math.floor(remainingMs/3600000);
+            const m = Math.floor((remainingMs%3600000)/60000);
+            return `${h}ч ${m}м`;
+        }
+
+        function updateFilterSchools() {
+            const city = document.getElementById('filter-city').value;
+            const schoolSelect = document.getElementById('filter-school');
+            schoolSelect.innerHTML = '<option value="">' + (currentLang === 'ru' ? 'Все школы' : 'Всі школи') + '</option>';
+            if (city && schoolsData[city]) schoolsData[city].forEach(s => { const opt = document.createElement('option'); opt.value = s; opt.textContent = s; schoolSelect.appendChild(opt); });
+        }
+
+        function updateSchoolOptions() {
+            const city = document.getElementById('city-select').value;
+            const schoolSelect = document.getElementById('school-select');
+            schoolSelect.innerHTML = '';
+            schoolsData[city].forEach(s => { const opt = document.createElement('option'); opt.value = s; opt.textContent = s; schoolSelect.appendChild(opt); });
+        }
+
+        function applyFilters() {
+            const cityFilter = document.getElementById('filter-city').value;
+            const schoolFilter = document.getElementById('filter-school').value;
+            const from = parseInt(document.getElementById('filter-from').value) || 0;
+            const to = parseInt(document.getElementById('filter-to').value) || Infinity;
+            const sortOrder = document.getElementById('sort-order').value;
+
+            let sorted = [...approvedTasks];
+            sorted.sort((a,b) => {
+                if (a.takenBy === nickname) return -1;
+                if (b.takenBy === nickname) return 1;
+                if (a.takenBy && !b.takenBy) return 1;
+                if (!a.takenBy && b.takenBy) return -1;
+                return sortOrder==='new' ? b.creationTime - a.creationTime : a.creationTime - b.creationTime;
+            });
+
+            let filtered = sorted.filter(task => {
+                const timeLeft = task.takenBy ? Infinity : task.creationTime + 48*3600000 - Date.now();
+                if (timeLeft <= 0) return false;
+                const cityMatch = !cityFilter || task.city === cityFilter;
+                const schoolMatch = !schoolFilter || task.school === schoolFilter;
+                const priceMatch = task.reward >= from && task.reward <= to;
+                return cityMatch && schoolMatch && priceMatch;
+            });
+
+            currentPage = 1;
+            renderTasks(filtered);
+        }
+
+        function renderTasks(filtered) {
+            tasksContainer.innerHTML = '';
+            noTasksEl.style.display = 'none';
+            const totalFiltered = filtered.length;
+            totalTasksEl.textContent = totalFiltered;
+            if (totalFiltered === 0) { noTasksEl.textContent = currentLang === 'ru' ? 'Нету заданий!' : 'Немає завдань!'; noTasksEl.style.display = 'block'; paginationEl.innerHTML = ''; return; }
+
+            const start = (currentPage-1)*itemsPerPage;
+            const end = start + itemsPerPage;
+            const pageTasks = filtered.slice(start, end);
+
+            pageTasks.forEach(task => {
+                const remaining = getRemainingTime(task.creationTime, task.takenBy);
+                const isTaken = !!task.takenBy;
+                const isMyTaken = task.takenBy === nickname;
+                const card = document.createElement('div');
+                card.className = `task-card ${isTaken ? 'taken' : ''} ${isMyTaken ? 'my-taken' : ''}`;
+                card.innerHTML = `
+                    <h4>${task.title}</h4>
+                    <p>${task.desc}</p>
+                    <p>🏙️ ${task.city} | 🏫 ${task.school}</p>
+                    <p>💰 ${currentLang === 'ru' ? 'Награда' : 'Нагорода'}: <strong>${task.reward} грн</strong></p>
+                    <p class="timer">${currentLang === 'ru' ? 'Исчезнет через' : 'Зникне через'}: ${remaining}</p>
+                    ${isTaken ? `<p>${currentLang === 'ru' ? 'Взято' : 'Взято'}: ${task.takenBy}</p>` : ''}
+                    <button class="neon-btn take-task" data-id="${task.id}" style="margin-top:10px; padding:8px 20px; font-size:0.95rem;" ${isTaken || myTakenTask || task.creator === nickname ? 'disabled class="disabled"' : ''}>${currentLang === 'ru' ? 'Взять задание' : 'Взяти завдання'}</button>
+                    ${isMyTaken ? `<button class="neon-btn secondary cancel-task" data-id="${task.id}" style="margin-top:10px;">Отказаться</button>` : ''}
+                    ${isAdmin ? `<button class="delete-btn" onclick="deleteTask(${task.id});event.stopImmediatePropagation()">×</button>` : ''}
+                `;
+                tasksContainer.appendChild(card);
+                if (isAdmin) card.querySelector('.delete-btn').style.display = 'block';
+            });
+            document.querySelectorAll('.take-task').forEach(btn => btn.addEventListener('click', takeTask));
+            document.querySelectorAll('.cancel-task').forEach(btn => btn.addEventListener('click', cancelTask));
+            renderPagination(totalFiltered);
+        }
+
+        function takeTask(e) {
+            const id = parseInt(e.target.dataset.id);
+            if (myTakenTask) return alert(currentLang === 'ru' ? 'Завершите текущее задание!' : 'Завершіть поточне завдання!');
+            const task = approvedTasks.find(t => t.id === id);
+            if (task && !task.takenBy) {
+                if (task.creator === nickname) return alert(currentLang === 'ru' ? 'Нельзя взять своё собственное задание!' : 'Не можна взяти своє власне завдання!');
+                task.takenBy = nickname;
+                myTakenTask = id;
+                chatBtn.style.display = 'block';
+                saveToLocal();
+                applyFilters();
+                addNotification(`Вы взяли задание "${task.title}"`);
+            } else {
+                alert(currentLang === 'ru' ? 'Это задание уже занято!' : 'Це завдання вже зайняте!');
+            }
+        }
+
+        function cancelTask(e) {
+            const id = parseInt(e.target.dataset.id);
+            const task = approvedTasks.find(t => t.id === id);
+            if (task) {
+                task.takenBy = null;
+                myTakenTask = null;
+                chatBtn.style.display = 'none';
+                saveToLocal();
+                applyFilters();
+            }
+        }
+
+        function checkMyTakenTask() {
+            approvedTasks.forEach(task => {
+                if (task.takenBy === nickname) {
+                    myTakenTask = task.id;
+                    chatBtn.style.display = 'block';
+                }
+            });
+        }
+
+        function deleteTask(id) {
+            approvedTasks = approvedTasks.filter(t => t.id !== id);
+            saveToLocal();
+            applyFilters();
+        }
+
+        function renderPagination(total) {
+            paginationEl.innerHTML = '';
+            const totalPages = Math.ceil(total / itemsPerPage);
+            for (let i = 1; i <= totalPages; i++) {
+                const btn = document.createElement('button');
+                btn.textContent = i; if (i === currentPage) btn.classList.add('active');
+                btn.onclick = () => { currentPage = i; applyFilters(); };
+                paginationEl.appendChild(btn);
+            }
+        }
+
+        function openModeration() {
+            const list = document.getElementById('pending-list');
+            list.innerHTML = '';
+            if (pendingTasks.length === 0) { list.innerHTML = '<p style="color:#ffcc00;">' + (currentLang === 'ru' ? 'Нет заданий на проверку' : 'Немає завдань на перевірку') + '</p>'; }
+            pendingTasks.forEach((task, index) => {
+                const div = document.createElement('div');
+                div.style.marginBottom = '20px'; div.style.borderBottom = '1px solid #666'; div.style.paddingBottom = '15px';
+                div.innerHTML = `
+                    <h4>${task.title}</h4>
+                    <p>${currentLang === 'ru' ? 'Автор' : 'Автор'}: ${task.creator}</p>
+                    <p>${task.desc}</p>
+                    <p>🏙️ ${task.city} | 🏫 ${task.school} | 💰 ${task.reward} грн</p>
+                    <input id="reason-${task.id}" class="reason-input" placeholder="${currentLang === 'ru' ? 'Причина отклонения (не обязательно)' : 'Причина відхилення (не обов\'язково)'}">
+                    <button onclick="approveTask(${index})" class="neon-btn" style="background:var(--neon-cyan);margin-right:10px;">${currentLang === 'ru' ? 'Одобрить' : 'Схвалити'}</button>
+                    <button onclick="rejectTask(${index})" class="neon-btn secondary">${currentLang === 'ru' ? 'Отклонить' : 'Відхилити'}</button>
+                `;
+                list.appendChild(div);
+            });
+            document.getElementById('moderation-modal').classList.add('active');
+        }
+
+        function closeModeration() { document.getElementById('moderation-modal').classList.remove('active'); }
+
+        function approveTask(index) {
+            const task = pendingTasks[index];
+            task.status = 'approved_pending_payment';
+            paymentPendingTasks.push(task);
+            pendingTasks.splice(index,1);
+            saveToLocal();
+            closeModeration();
+            applyFilters();
+            addNotification(`Задание "${task.title}" одобрено и ждёт предоплату`);
+        }
+
+        function rejectTask(index) {
+            const task = pendingTasks[index];
+            const reasonInput = document.getElementById(`reason-${task.id}`);
+            task.status = 'rejected';
+            task.rejectReason = reasonInput && reasonInput.value.trim() ? reasonInput.value.trim() : (currentLang === 'ru' ? 'не указана' : 'не вказано');
+            task.decisionTime = Date.now();
+            rejectedTasks.push(task);
+            pendingTasks.splice(index,1);
+            saveToLocal();
+            closeModeration();
+            applyFilters();
+        }
+
+        function payTask(id) {
+            const taskIndex = paymentPendingTasks.findIndex(t => t.id === id);
+            if (taskIndex === -1) return;
+            const task = paymentPendingTasks[taskIndex];
+            document.getElementById('pay-title').textContent = `Предоплата ${task.reward} грн — ${task.title}`;
+            paymentModal.classList.add('active');
+            const confirmPayBtn = document.getElementById('confirm-pay');
+            const cancelPayBtn = document.getElementById('cancel-pay');
+            const handleConfirm = () => {
+                task.status = 'approved';
+                task.decisionTime = Date.now();
+                approvedTasks.push(task);
+                paymentPendingTasks.splice(taskIndex, 1);
+                saveToLocal();
+                paymentModal.classList.remove('active');
+                addNotification(`Предоплата за "${task.title}" успешно внесена! Задание теперь видно всем`);
+                showMyTasks();
+                applyFilters();
+            };
+            confirmPayBtn.onclick = handleConfirm;
+            cancelPayBtn.onclick = () => paymentModal.classList.remove('active');
+        }
+
+        function cancelPayment(id) {
+            const idx = paymentPendingTasks.findIndex(t => t.id === id);
+            if (idx !== -1) {
+                const task = paymentPendingTasks[idx];
+                paymentPendingTasks.splice(idx, 1);
+                saveToLocal();
+                addNotification(`Задание "${task.title}" отменено до предоплаты`);
+                showMyTasks();
+                applyFilters();
+            }
+        }
+
+        function showMyTasks() {
+            const now = Date.now();
+            approvedTasks = approvedTasks.filter(task => {
+                if (task.decisionTime && now - task.decisionTime > 24 * 3600000) {
+                    archivedTasks.push(task);
+                    return false;
+                }
+                return true;
+            });
+            rejectedTasks = rejectedTasks.filter(task => {
+                if (task.decisionTime && now - task.decisionTime > 24 * 3600000) {
+                    archivedTasks.push(task);
+                    return false;
+                }
+                return true;
+            });
+            saveToLocal();
+
+            const list = document.getElementById('my-tasks-list');
+            const archiveList = document.getElementById('archive-list');
+            list.innerHTML = '';
+            archiveList.innerHTML = '';
+            archiveList.style.display = 'none';
+            backFromArchive.style.display = 'none';
+
+            const myPending = pendingTasks.filter(t => t.creator === nickname);
+            const myPaymentPending = paymentPendingTasks.filter(t => t.creator === nickname);
+            const myApproved = approvedTasks.filter(t => t.creator === nickname);
+            const myRejected = rejectedTasks.filter(t => t.creator === nickname);
+            const myArchived = archivedTasks.filter(t => t.creator === nickname);
+
+            const allMy = [...myPending, ...myPaymentPending, ...myApproved, ...myRejected];
+
+            if (allMy.length === 0 && myArchived.length === 0) {
+                list.innerHTML = '<p>' + (currentLang === 'ru' ? 'У тебя пока нет заданий' : 'У тебе поки немає завдань') + '</p>';
+                document.getElementById('my-tasks-modal').classList.add('active');
+                return;
+            }
+
+            allMy.forEach(task => {
+                let statusText = '';
+                if (task.status === 'approved_pending_payment') statusText = '✅ ' + (currentLang === 'ru' ? 'Одобрено, осталось внести предоплату' : 'Схвалено, залишилось внести передплату') + ` <button class="neon-btn pay-task" data-id="${task.id}">Внести</button> <button class="neon-btn secondary cancel-pay" data-id="${task.id}">Отменить</button>`;
+                else if (task.status === 'approved') statusText = '✅ ' + (currentLang === 'ru' ? 'Одобрено' : 'Схвалено');
+                else if (task.status === 'rejected') statusText = `❌ ${currentLang === 'ru' ? 'Отклонено' : 'Відхилено'} (${currentLang === 'ru' ? 'причина' : 'причина'}: ${task.rejectReason || (currentLang === 'ru' ? 'не указана' : 'не вказано')})`;
+                else statusText = '⏳ ' + (currentLang === 'ru' ? 'На проверке' : 'На перевірці');
+
+                const div = document.createElement('div');
+                div.style.marginBottom = '15px'; div.style.padding = '10px'; div.style.border = '1px solid #666'; div.style.borderRadius = '10px';
+                div.innerHTML = `<h4>${task.title}</h4><p>${statusText}</p>`;
+                list.appendChild(div);
+            });
+
+            document.getElementById('archive-btn').onclick = () => {
+                list.style.display = 'none';
+                archiveList.style.display = 'block';
+                backFromArchive.style.display = 'block';
+                archiveList.innerHTML = '';
+                if (myArchived.length === 0) {
+                    archiveList.innerHTML = '<p>' + (currentLang === 'ru' ? 'Архив пуст' : 'Архів порожній') + '</p>';
+                } else {
+                    myArchived.forEach(task => {
+                        let statusText = '';
+                        if (task.status === 'approved') statusText = '✅ ' + (currentLang === 'ru' ? 'Одобрено (архивировано)' : 'Схвалено (архівовано)');
+                        else if (task.status === 'rejected') statusText = `❌ ${currentLang === 'ru' ? 'Отклонено' : 'Відхилено'} (${currentLang === 'ru' ? 'причина' : 'причина'}: ${task.rejectReason || (currentLang === 'ru' ? 'не указана' : 'не вказано')}) (${currentLang === 'ru' ? 'архивировано' : 'архівовано'})`;
+
+                        const div = document.createElement('div');
+                        div.style.marginBottom = '15px'; div.style.padding = '10px'; div.style.border = '1px solid #666'; div.style.borderRadius = '10px';
+                        div.innerHTML = `<h4>${task.title}</h4><p>${statusText}</p>`;
+                        archiveList.appendChild(div);
+                    });
+                }
+            };
+
+            backFromArchive.onclick = () => {
+                list.style.display = 'block';
+                archiveList.style.display = 'none';
+                backFromArchive.style.display = 'none';
+            };
+
+            document.getElementById('my-tasks-modal').classList.add('active');
+        }
+
+        function closeMyTasks() { document.getElementById('my-tasks-modal').classList.remove('active'); }
+
+        function setLang(l) {
+            currentLang = l;
+            document.getElementById('welcome-title').textContent = l === 'ru' ? 'Введи псевдоним' : 'Введи псевдонім';
+            document.getElementById('welcome-subtitle').textContent = l === 'ru' ? 'Не настоящее имя — только Псевдоним' : 'Не справжнє ім\'я — тільки Псевдонім';
+            readyBtn.textContent = l === 'ru' ? 'Готово' : 'Готово';
+            changeNickBtn.textContent = l === 'ru' ? 'Поменять псевдоним' : 'Змінити псевдонім';
+            changePassBtn.textContent = l === 'ru' ? 'Сменить пароль' : 'Змінити пароль';
+            myTasksBtn.textContent = l === 'ru' ? 'Мои задания' : 'Мої завдання';
+            supportBtn.textContent = l === 'ru' ? 'Поддержка' : 'Підтримка';
+            document.getElementById('task-count-text').textContent = l === 'ru' ? 'Всего заданий: ' : 'Всього завдань: ';
+            createBtn.textContent = l === 'ru' ? 'Сделать задание' : 'Створити завдання';
+            tasksTitle.textContent = l === 'ru' ? 'Задания' : 'Завдання';
+            modalTitle.textContent = l === 'ru' ? 'Новое задание' : 'Нове завдання';
+            document.getElementById('task-title').placeholder = l === 'ru' ? 'Название задания' : 'Назва завдання';
+            document.getElementById('task-desc').placeholder = l === 'ru' ? 'Описание...' : 'Опис...';
+            document.getElementById('city-label').textContent = l === 'ru' ? 'Город' : 'Місто';
+            document.getElementById('school-label').textContent = l === 'ru' ? 'Школа' : 'Школа';
+            document.getElementById('reward-label').textContent = l === 'ru' ? 'Сколько получит исполнитель (грн)' : 'Скільки отримає виконавець (грн)';
+            cancelCreate.textContent = l === 'ru' ? 'Отмена' : 'Скасувати';
+            saveTaskBtn.textContent = l === 'ru' ? 'Сделать задания' : 'Створити завдання';
+            document.getElementById('moderation-title').textContent = l === 'ru' ? 'Задания на проверку' : 'Завдання на перевірку';
+            document.getElementById('my-tasks-title').textContent = l === 'ru' ? 'Мои задания' : 'Мої завдання';
+            document.getElementById('archive-btn').textContent = l === 'ru' ? 'Архив' : 'Архів';
+            document.getElementById('back-from-archive').textContent = l === 'ru' ? 'Назад' : 'Назад';
+            adminBtn.textContent = l === 'ru' ? 'Просмотр Заданий' : 'Перегляд Завдань';
+            document.getElementById('filter-city-label').textContent = l === 'ru' ? 'Город:' : 'Місто:';
+            document.getElementById('filter-school-label').textContent = l === 'ru' ? 'Школа:' : 'Школа:';
+            document.getElementById('filter-from-label').textContent = l === 'ru' ? 'Цена от:' : 'Ціна від:';
+            document.getElementById('filter-to-label').textContent = l === 'ru' ? 'Цена до:' : 'Ціна до:';
+            document.getElementById('sort-label').textContent = l === 'ru' ? 'Сортировка:' : 'Сортування:';
+            const sortSelect = document.getElementById('sort-order');
+            sortSelect.options[0].text = l === 'ru' ? 'Новые сначала' : 'Нові спочатку';
+            sortSelect.options[1].text = l === 'ru' ? 'Старые сначала' : 'Старі спочатку';
+            const filterCity = document.getElementById('filter-city');
+            filterCity.options[0].text = l === 'ru' ? 'Все города' : 'Всі міста';
+            updateFilterSchools();
+            updateGreeting();
+            applyFilters();
+            if (document.getElementById('my-tasks-modal').classList.contains('active')) showMyTasks();
+            if (document.getElementById('moderation-modal').classList.contains('active')) openModeration();
+        }
+
+        function openInfoModal() {
+            infoContent.innerHTML = `
+                <p><strong>Здесь можно создать задание или выполнить его за реальные деньги.</strong></p>
+                <h4>Как создать задание?</h4>
+                <ol>
+                    <li>Нажимаешь «Создать задание».</li>
+                    <li>Пишешь название, описание и выбираешь свой город. Если его нет в списке — напиши об этом сюда.</li>
+                    <li>Указываешь сумму, за которую нужно выполнить задание.</li>
+                    <li>Нажимаешь на кнопку «Создать задание».</li>
+                    <li>Задание отправляется к нам на проверку.</li>
+                    <li>Если мы его одобрили, в разделе «Мои задания» нужно внести полную предоплату. Если же мы отклонили ваше задание, мы опишем причину.</li>
+                    <li>Задание опубликовано, и теперь его может кто-то выполнить.</li>
+                </ol>
+                <h4>Как выполнить задание?</h4>
+                <ol>
+                    <li>Выбираешь задание, которое понравилось.</li>
+                    <li>Нажимаешь «Выполнить».</li>
+                    <li>У вас внизу слева появляется чат.</li>
+                    <li>Выполняешь задание на видео (можно снять самому или попросить друга).</li>
+                    <li>Загружаешь видео в чат и нажимаешь «Подтвердить».</li>
+                    <li>Ждёшь, когда заказчик нажмёт кнопку «Подтвердить».</li>
+                    <li>Когда заказчик подтвердил выполнение, тебе нужно ввести данные карты.</li>
+                    <li>Получаешь за задание 80% от суммы.</li>
+                </ol>
+                <p><strong>!!! Данные карты нигде не сохраняются !!!</strong></p>
+            `;
+            infoModal.classList.add('active');
+        }
+
+        function closeInfoModal() {
+            infoModal.classList.remove('active');
+        }
+
+        // === ЛОГИКА НИКОВ + ПАРОЛЕЙ ===
+        function checkNicknameAndPassword(nick) {
+            const existingUser = users.find(u => u.nickname.toLowerCase() === nick.toLowerCase());
+            if (existingUser) {
+                const enteredPass = prompt(currentLang === 'ru' ? `Введите пароль для ${nick}:` : `Введіть пароль для ${nick}:`);
+                if (enteredPass === existingUser.password) {
+                    nickname = nick;
+                    isAdmin = existingUser.isAdmin;
+                    currentPassword = enteredPass;
+                    return true;
+                } else {
+                    alert(currentLang === 'ru' ? 'Неверный пароль!' : 'Неправильний пароль!');
+                    return false;
+                }
+            } else {
+                const newPass = prompt(currentLang === 'ru' ? `Придумайте пароль для ${nick}:` : `Придумайте пароль для ${nick}:`);
+                if (newPass && newPass.length >= 3) {
+                    users.push({nickname: nick, password: newPass, isAdmin: false});
+                    nickname = nick;
+                    currentPassword = newPass;
+                    isAdmin = false;
+                    return true;
+                } else {
+                    alert(currentLang === 'ru' ? 'Пароль слишком короткий!' : 'Пароль занадто короткий!');
+                    return false;
+                }
+            }
+        }
+
+        function changePassword() {
+            if (!nickname) return;
+            const oldPass = prompt(currentLang === 'ru' ? 'Введите текущий пароль для подтверждения:' : 'Введіть поточний пароль для підтвердження:');
+            const user = users.find(u => u.nickname === nickname);
+            if (!user || oldPass !== user.password) {
+                alert(currentLang === 'ru' ? 'Неверный текущий пароль!' : 'Неправильний поточний пароль!');
+                return;
+            }
+            const newPass = prompt(currentLang === 'ru' ? 'Введите новый пароль:' : 'Введіть новий пароль:');
+            if (newPass && newPass.length >= 3) {
+                user.password = newPass;
+                currentPassword = newPass;
+                saveToLocal();
+                alert(currentLang === 'ru' ? 'Пароль успешно изменён!' : 'Пароль успішно змінено!');
+            } else {
+                alert(currentLang === 'ru' ? 'Пароль слишком короткий!' : 'Пароль занадто короткий!');
+            }
+        }
+
+        // Обработчики
+        readyBtn.addEventListener('click', () => {
+            let nick = nicknameInput.value.trim();
+            if (!nick) {
+                alert(currentLang === 'ru' ? 'Введите псевдоним!' : 'Введіть псевдонім!');
+                return;
+            }
+
+            // Специальные админы
+            if (nick === 'Пикс') {
+                const adminPass = prompt(currentLang === 'ru' ? 'Введите пароль для Пикс:' : 'Введіть пароль для Пікс:');
+                if (adminPass === 'KP7224') {
+                    nickname = nick;
+                    isAdmin = true;
+                    currentPassword = adminPass;
+                    if (!users.find(u => u.nickname === nick)) users.push({nickname: nick, password: adminPass, isAdmin: true});
+                    saveToLocal();
+                    showMainScreen();
+                    return;
+                } else {
+                    alert(currentLang === 'ru' ? 'Неверный пароль!' : 'Неправильний пароль!');
+                    return;
+                }
+            }
+            if (nick === 'Куга') {
+                const adminPass = prompt(currentLang === 'ru' ? 'Введите пароль для Куга:' : 'Введіть пароль для Куга:');
+                if (adminPass === 'KKK7224f') {
+                    nickname = nick;
+                    isAdmin = true;
+                    currentPassword = adminPass;
+                    if (!users.find(u => u.nickname === nick)) users.push({nickname: nick, password: adminPass, isAdmin: true});
+                    saveToLocal();
+                    showMainScreen();
+                    return;
+                } else {
+                    alert(currentLang === 'ru' ? 'Неверный пароль!' : 'Неправильний пароль!');
+                    return;
+                }
+            }
+
+            // Обычный ник + пароль
+            if (checkNicknameAndPassword(nick)) {
+                saveToLocal();
+                showMainScreen();
+            }
+        });
+
+        infoBtn.addEventListener('click', openInfoModal);
+        closeInfoBtn.addEventListener('click', closeInfoModal);
+
+        changePassBtn.addEventListener('click', changePassword);
+
+        createBtn.addEventListener('click', () => {
+            modal.classList.add('active');
+            updateSchoolOptions();
+        });
+        cancelCreate.addEventListener('click', () => modal.classList.remove('active'));
+
+        saveTaskBtn.addEventListener('click', () => {
+            const title = document.getElementById('task-title').value.trim();
+            const desc = document.getElementById('task-desc').value.trim();
+            const city = document.getElementById('city-select').value;
+            const school = document.getElementById('school-select').value;
+            const reward = parseInt(document.getElementById('reward-input').value) || 0;
+            if (title && school && reward >= 10) {
+                const newTask = {
+                    id: Date.now(),
+                    title, desc: desc || (currentLang === 'ru' ? 'Нет описания' : 'Немає опису'),
+                    city, school, reward,
+                    creationTime: Date.now(),
+                    creator: nickname,
+                    status: 'pending',
+                    takenBy: null,
+                    chat: []
+                };
+                pendingTasks.push(newTask);
+                saveToLocal();
+                modal.classList.remove('active');
+                document.getElementById('task-title').value = '';
+                document.getElementById('task-desc').value = '';
+                document.getElementById('reward-input').value = '';
+                applyFilters();
+                addNotification(`Новое задание "${title}" отправлено на модерацию`);
+            } else { alert(currentLang === 'ru' ? 'Заполни название, школу и награду (минимум 10 грн)!' : 'Заповни назву, школу та нагороду (мінімум 10 грн)!'); }
+        });
+
+        changeNickBtn.addEventListener('click', () => {
+            if (confirm(currentLang === 'ru' ? 'Сменить псевдоним? (все данные будут сброшены)' : 'Змінити псевдонім? (всі дані буде скинуто)')) {
+                localStorage.clear();
+                location.reload();
+            }
+        });
+
+        myTasksBtn.addEventListener('click', showMyTasks);
+
+        chatBtn.addEventListener('click', () => {
+            if (myTakenTask) openChat(myTakenTask);
+        });
+
+        function openChat(taskId) {
+            currentChatTaskId = taskId;
+            const task = approvedTasks.find(t => t.id === taskId);
+            const isCreator = task.creator === nickname;
+            const partnerNick = isCreator ? task.takenBy : task.creator;
+            chatTaskTitle.textContent = task.title;
+            chatMessages.innerHTML = '';
+            rejectProof.style.display = isCreator ? 'block' : 'none';
+            acceptProof.style.display = isCreator ? 'block' : 'none';
+            uploadVideo.style.display = !isCreator ? 'block' : 'none';
+            task.chat.forEach(msg => {
+                const div = document.createElement('div');
+                div.className = `message ${msg.sender === nickname ? 'sent' : 'received'}`;
+                const prefix = msg.sender === nickname ? (currentLang === 'ru' ? 'Вы: ' : 'Ви: ') : `${partnerNick}: `;
+                if (msg.video) {
+                    div.innerHTML = `<span>${prefix}</span><video src="${msg.video}" controls style="max-width:100%; border-radius:8px;"></video>`;
+                } else {
+                    div.textContent = prefix + msg.text;
+                }
+                chatMessages.appendChild(div);
+            });
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+            chatModal.classList.add('active');
+        }
+
+        sendMsg.addEventListener('click', () => {
+            const text = chatInput.value.trim();
+            if (text) {
+                const task = approvedTasks.find(t => t.id === currentChatTaskId);
+                task.chat.push({ sender: nickname, text, timestamp: Date.now() });
+                saveToLocal();
+                const div = document.createElement('div');
+                div.className = 'message sent';
+                div.textContent = (currentLang === 'ru' ? 'Вы: ' : 'Ви: ') + text;
+                chatMessages.appendChild(div);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+                chatInput.value = '';
+            }
+        });
+
+        uploadVideo.addEventListener('click', () => {
+            const file = videoUpload.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const task = approvedTasks.find(t => t.id === currentChatTaskId);
+                    task.chat.push({ sender: nickname, video: e.target.result, timestamp: Date.now() });
+                    saveToLocal();
+                    const div = document.createElement('div');
+                    div.className = 'message sent';
+                    div.innerHTML = (currentLang === 'ru' ? 'Вы: ' : 'Ви: ') + `<video src="${e.target.result}" controls style="max-width:100%; border-radius:8px;"></video>`;
+                    chatMessages.appendChild(div);
+                    chatMessages.scrollTop = chatMessages.scrollHeight;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        rejectProof.addEventListener('click', () => {
+            alert(currentLang === 'ru' ? 'Доказательство отклонено!' : 'Доказ відхилено!');
+            const task = approvedTasks.find(t => t.id === currentChatTaskId);
+            task.takenBy = null;
+            myTakenTask = null;
+            chatBtn.style.display = 'none';
+            saveToLocal();
+            closeChat();
+            applyFilters();
+        });
+
+        acceptProof.addEventListener('click', () => {
+            alert(currentLang === 'ru' ? 'Выплата произведена! 80% исполнителю, 20% вам.' : 'Виплата здійснена! 80% виконавцю, 20% вам.');
+            const task = approvedTasks.find(t => t.id === currentChatTaskId);
+            task.takenBy = null;
+            myTakenTask = null;
+            chatBtn.style.display = 'none';
+            saveToLocal();
+            closeChat();
+            applyFilters();
+        });
+
+        closeChatBtn.addEventListener('click', closeChat);
+
+        function closeChat() { chatModal.classList.remove('active'); currentChatTaskId = null; }
+
+        function openSupport() {
+            supportModal.classList.add('active');
+            document.getElementById('support-content').innerHTML = '';
+            if (isAdmin) {
+                renderAdminSupport();
+            } else {
+                renderUserSupport();
+            }
+        }
+
+        function closeSupport() {
+            supportModal.classList.remove('active');
+        }
+
+        function renderUserSupport() {
+            const content = document.getElementById('support-content');
+            content.innerHTML = `
+                <p style="margin-bottom:10px;">Опишите проблему или вопрос:</p>
+                <textarea id="support-message" rows="6" placeholder="Подробно опишите..." style="width:100%;"></textarea>
+                <label style="display:block;margin:15px 0 8px;">Прикрепить фото или видео (можно несколько)</label>
+                <input type="file" id="support-attachments" multiple accept="image/*,video/*" style="width:100%;">
+                <button id="submit-support" class="neon-btn" style="margin-top:20px;width:100%;">Отправить в поддержку</button>
+                <h4 style="margin:35px 0 15px;">Мои заявки</h4>
+                <div id="user-support-list"></div>
+            `;
+            document.getElementById('submit-support').addEventListener('click', submitSupportRequest);
+            renderMySupportList();
+        }
+
+        async function submitSupportRequest() {
+            const message = document.getElementById('support-message').value.trim();
+            const filesInput = document.getElementById('support-attachments');
+            if (!message) return alert(currentLang === 'ru' ? 'Опишите проблему!' : 'Опишіть проблему!');
+
+            const attachments = [];
+            const files = Array.from(filesInput.files);
+            for (let file of files) {
+                const base64 = await new Promise(res => {
+                    const reader = new FileReader();
+                    reader.onload = e => res(e.target.result);
+                    reader.readAsDataURL(file);
+                });
+                attachments.push({ type: file.type.startsWith('image') ? 'image' : 'video', data: base64 });
+            }
+
+            const newReq = {
+                id: Date.now(),
+                creator: nickname,
+                message,
+                attachments,
+                status: 'open',
+                assignedTo: null
+            };
+            supportRequests.push(newReq);
+            saveToLocal();
+            addNotification(`Новая заявка в поддержку от ${nickname}`);
+            alert(currentLang === 'ru' ? 'Заявка отправлена! С вами в скором времени свяжется Админ' : 'Заявка надіслана! З вами невдовзі зв\'яжеться Адмін');
+            renderMySupportList();
+            document.getElementById('support-message').value = '';
+            filesInput.value = '';
+        }
+
+        function renderMySupportList() {
+            const listEl = document.getElementById('user-support-list');
+            listEl.innerHTML = '';
+            const mySupps = supportRequests.filter(r => r.creator === nickname);
+            if (mySupps.length === 0) {
+                listEl.innerHTML = '<p>У вас пока нет заявок</p>';
+                return;
+            }
+            mySupps.forEach(req => {
+                const status = req.assignedTo ? `✅ В работе у ${req.assignedTo}` : '⏳ Админ скоро свяжется с вами';
+                const div = document.createElement('div');
+                div.style.marginBottom = '15px'; div.style.padding = '12px'; div.style.border = '1px solid #666'; div.style.borderRadius = '10px';
+                div.innerHTML = `<strong>${req.message.substring(0,60)}...</strong><br><small>${status}</small>`;
+                listEl.appendChild(div);
+            });
+        }
+
+        function renderAdminSupport() {
+            const content = document.getElementById('support-content');
+            content.innerHTML = `<h4 style="margin-bottom:20px;">Заявки в поддержку</h4><div id="admin-support-list"></div>`;
+            renderAdminSupportList();
+        }
+
+        function renderAdminSupportList() {
+            const listEl = document.getElementById('admin-support-list');
+            listEl.innerHTML = '';
+            const openReqs = supportRequests.filter(r => r.status === 'open');
+            if (openReqs.length === 0) {
+                listEl.innerHTML = '<p style="color:#ffcc00;">Нет открытых заявок</p>';
+                return;
+            }
+            openReqs.forEach(req => {
+                let attachHTML = '';
+                if (req.attachments.length) {
+                    attachHTML = '<p><strong>Прикрепления:</strong></p>';
+                    req.attachments.forEach(att => {
+                        if (att.type === 'image') attachHTML += `<img src="${att.data}" style="max-width:220px;margin:5px;border-radius:8px;">`;
+                        else attachHTML += `<video src="${att.data}" controls style="max-width:220px;margin:5px;border-radius:8px;"></video>`;
+                    });
+                }
+                const taken = req.assignedTo ? `<p style="color:#ffcc00;">В работе у: ${req.assignedTo}</p>` : '';
+                const div = document.createElement('div');
+                div.style.marginBottom = '25px'; div.style.borderBottom = '1px solid #666'; div.style.paddingBottom = '15px';
+                div.innerHTML = `
+                    <h4>От ${req.creator}</h4>
+                    <p>${req.message}</p>
+                    ${attachHTML}
+                    ${taken}
+                    ${!req.assignedTo ? `<button onclick="takeSupport(${req.id})" class="neon-btn" style="margin-top:10px;">Взять в работу</button>` : ''}
+                    <button onclick="closeSupportRequest(${req.id})" class="neon-btn secondary" style="margin-top:10px;margin-left:10px;">Закрыть заявку</button>
+                `;
+                listEl.appendChild(div);
+            });
+        }
+
+        window.takeSupport = function(id) {
+            const req = supportRequests.find(r => r.id === id);
+            if (req && !req.assignedTo) {
+                req.assignedTo = nickname;
+                saveToLocal();
+                renderAdminSupportList();
+            }
+        };
+
+        window.closeSupportRequest = function(id) {
+            const idx = supportRequests.findIndex(r => r.id === id);
+            if (idx !== -1) {
+                supportRequests[idx].status = 'closed';
+                saveToLocal();
+                renderAdminSupportList();
+            }
+        };
+
+        supportBtn.addEventListener('click', openSupport);
+        closeSupportBtn.addEventListener('click', closeSupport);
+
+        const myTasksModalEl = document.getElementById('my-tasks-modal');
+        myTasksModalEl.addEventListener('click', (e) => {
+            if (e.target.classList.contains('pay-task')) {
+                payTask(parseInt(e.target.dataset.id));
+            }
+            if (e.target.classList.contains('cancel-pay')) {
+                cancelPayment(parseInt(e.target.dataset.id));
+            }
+        });
+
+        setInterval(() => { if (mainScreen.classList.contains('active')) applyFilters(); }, 60000);
+
+        loadFromLocal();
+        updateFilterSchools();
+        setLang(currentLang);
+    </script>
+</body>
+</html>
